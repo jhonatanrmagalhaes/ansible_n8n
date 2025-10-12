@@ -85,7 +85,6 @@ ansible n8n_server  -i inventory.ini -m ping
 2.  Deploy do docker + n8n + backup/local
 ```bash
 ansible-playbook -i inventory.ini deploy_n8n.yml
-ansible-playbook -i inventory.ini deploy_n8n.yml --step #Se quer assistir cada step
 ```
 ou
 ```bash
