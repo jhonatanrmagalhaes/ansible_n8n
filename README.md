@@ -15,13 +15,15 @@ Este playbook Ansible automatiza a implantação da ferramenta de automação de
 ## Estrutura de Ficheiros
 
 Garanta que o seu diretório de projeto está estruturado da seguinte forma:
-.
+```bash
 ├── README.md
-├── requirements.txt
-├── inventory.ini
+├── cleanup_n8n.yml
 ├── deploy_n8n.yml
-└── files/
-    └── docker-compose.yml
+├── files
+│   └── docker-compose.yml
+├── inventory-template.ini
+└── requirements.txt
+```
 
 ---
 
