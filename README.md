@@ -78,7 +78,11 @@ ansible_python_interpreter=/usr/bin/python3
 ansible_ssh_private_key_file=/path/to/your/private_key
 ```
 ## Executar Playbooks
-1.  Deploy do docker + n8n + backup/local
+1. Testar um ping a máquina remota
+```bash
+ansible n8n_server  -i inventory.ini -m ping
+```
+2.  Deploy do docker + n8n + backup/local
 ```bash
 ansible-playbook -i inventory.ini deploy_n8n.yml
 ansible-playbook -i inventory.ini deploy_n8n.yml --step #Se quer assistir cada step
