@@ -1,0 +1,34 @@
+version: '3.7'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      # metrics
+      - N8N_METRICS=true
+      # healthz
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_SECURE_COOKIE=false
+      - GENERIC_TIMEZONE=Europe/Lisbon
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  n8n_backup:
+    image: alpine
+    depends_on:
+      - n8n
+    volumes:
+      - n8n_data:/data:ro
+      - /n8n_backup:/backup
+    command: sh -c "apk add --no-cache rsync && while true; do rsync -a /data/ /backup/ && sleep 300; done"
+    restart: always
+
+volumes:
+  n8n_data:

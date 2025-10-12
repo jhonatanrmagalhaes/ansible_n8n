@@ -1,0 +1,76 @@
+---
+- name: Instalar Docker e implantar n8n (com Autocorreção e Reinstalação)
+  hosts: n8n_server
+  become: yes # Executar tarefas com sudo
+
+  tasks:
+    - name: Verificar se o Docker está instalado e operacional
+      ansible.builtin.command: docker info
+      register: docker_check
+      changed_when: false
+      failed_when: false # Impede o playbook de falhar se o Docker não estiver instalado
+
+    - name: Corrigir ou Instalar o Docker (apenas se necessário)
+      block:
+        - name: 1. Instalar pacotes de pré-requisitos
+          ansible.builtin.apt:
+            name: ['ca-certificates', 'curl']
+            state: present
+            update_cache: yes
+
+        - name: 2. Garantir que os diretórios de configuração existem
+          ansible.builtin.file:
+            path: /etc/apt/keyrings
+            state: directory
+            mode: '0755'
+
+        - name: 3. Adicionar a chave GPG oficial do Docker
+          ansible.builtin.get_url:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            dest: /etc/apt/keyrings/docker.asc
+            mode: '0644'
+            force: true
+
+        - name: 4. Configurar o repositório APT do Docker
+          ansible.builtin.apt_repository:
+            repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+            filename: docker
+
+        - name: 5. Forçar a desinstalação de pacotes Docker potencialmente corrompidos
+          ansible.builtin.apt:
+            name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose-plugin']
+            state: absent
+            autoremove: yes
+            purge: yes
+            force: yes
+        
+        - name: 6. Fazer uma instalação limpa do Docker Engine e do plugin do Compose
+          ansible.builtin.apt:
+            name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose-plugin']
+            state: present
+
+      when: docker_check.rc != 0 # Este bloco SÓ executa se o comando 'docker info' falhou
+
+    - name: Forçar a atualização da conexão e dos factos (se o Docker foi (re)instalado)
+      ansible.builtin.meta: reset_connection
+      when: docker_check.rc != 0
+
+    - name: Criar um diretório para o n8n
+      ansible.builtin.file:
+        path: /opt/n8n
+        state: directory
+        mode: '0755'
+
+    - name: Copiar o ficheiro Docker Compose para o servidor
+      ansible.builtin.copy:
+        src: files/docker-compose.yml
+        dest: /opt/n8n/docker-compose.yml
+
+    - name: Iniciar o contentor n8n usando Docker Compose v2
+      community.docker.docker_compose_v2:
+        project_src: /opt/n8n
+        state: present
+    - name: Mostrar URL de acesso
+      ansible.builtin.debug:
+        msg: "✅ Está rodando em: http://{{ ansible_default_ipv4.address }}:5678"

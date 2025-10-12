@@ -1,0 +1,43 @@
+---
+- name: Limpar Ambiente do n8n e Docker
+  hosts: n8n_server
+  become: yes # Executar tarefas com sudo
+
+  tasks:
+    - name: 1. Parar e remover os contentores do n8n
+      community.docker.docker_compose_v2:
+        project_src: /opt/n8n
+        state: absent # 'absent' para e remove os contentores, redes e volumes
+      ignore_errors: yes # Ignora erros se o Docker já estiver desinstalado
+
+    - name: 2. Remover o diretório do projeto n8n
+      ansible.builtin.file:
+        path: /opt/n8n
+        state: absent
+
+    - name: 3. Desinstalar completamente os pacotes do Docker
+      ansible.builtin.apt:
+        name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose-plugin']
+        state: absent
+        purge: yes # 'purge' remove também os ficheiros de configuração
+        autoremove: yes # Remove dependências que não são mais necessárias
+        force: yes
+      ignore_errors: yes # Ignora erros se os pacotes não estiverem instalados
+
+    - name: 4. Remover o ficheiro do repositório APT do Docker
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+
+    - name: 5. Remover a chave GPG do Docker
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/docker.asc
+        state: absent
+
+    - name: 6. Atualizar o cache do APT para finalizar a limpeza
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: 7. Exibir mensagem de sucesso
+      ansible.builtin.debug:
+        msg: "✅ Ambiente limpo com sucesso! O n8n e o Docker foram removidos."
