@@ -34,10 +34,15 @@
         path: /etc/apt/keyrings/docker.asc
         state: absent
 
-    - name: 6. Atualizar o cache do APT para finalizar a limpeza
+    - name: 6. Remover var lib docker
+      ansible.builtin.file:
+        path: /var/lib/docker
+        state: absent
+
+    - name: 7. Atualizar o cache do APT para finalizar a limpeza
       ansible.builtin.apt:
         update_cache: yes
 
-    - name: 7. Exibir mensagem de sucesso
+    - name: 8. Exibir mensagem de sucesso
       ansible.builtin.debug:
         msg: "✅ Ambiente limpo com sucesso! O n8n e o Docker foram removidos."
