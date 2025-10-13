@@ -73,7 +73,7 @@ Agora, configure o ficheiro `inventory.ini` com os detalhes do seu servidor.
 n8n-01 ansible_host=x.x.x.x
 
 [n8n_server:vars]
-ansible_user=root #Default is root
+ansible_user=root
 ansible_python_interpreter=/usr/bin/python3
 ansible_ssh_private_key_file=/path/to/your/private_key
 ```
