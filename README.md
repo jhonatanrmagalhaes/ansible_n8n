@@ -90,3 +90,23 @@ ou
 ```bash
 ansible-playbook -i inventory.ini deploy_n8n.yml --step #Se quer assistir cada step
 ```
+
+## Habilitar rotina de backup
+
+1. Executar playbook de backup
+```bash
+ansible-playbook -i your_inventory.ini backup_cron.yml
+```
+2 . Cron's path
+```bash
+cat /etc/cron.d/ansible_backup_jobs
+```
+
+3. Config
+```bash
+#Ansible: Horario Tar GZ Backup
+0 * * * * root tar -czf /opt/archives/backup-$(date +\%Y-\%m-\%d-\%H\%M).tar.gz /backup
+
+#Ansible: Diario Limpeza de Backups antigos
+30 4 * * * root find /opt/archives -type f -name '*.tar.gz' -mtime +7 -delete
+```
