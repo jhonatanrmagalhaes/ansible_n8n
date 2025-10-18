@@ -1,0 +1,52 @@
+---
+- name: Configura Cron Jobs para Backup Horário e Limpeza Diária
+  hosts: n8n_server
+  become: yes
+
+  vars:
+    diretorio_origem_backup: "/backup"
+    diretorio_destino_arquivos: "/opt/archives"
+    dias_para_limpeza: 7
+
+  tasks:
+    - name: Garante que o diretório de destino dos arquivos compactados exista
+      ansible.builtin.file:
+        path: "{{ diretorio_destino_arquivos }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Cria o cron job para compactar o diretório de backup a cada hora
+      ansible.builtin.cron:
+        name: "Backup Horario Compactado (Tar GZ)"
+        minute: "0"
+        hour: "*"
+        user: root
+        job: "tar -czf {{ diretorio_destino_arquivos }}/backup-$(date +\\%Y-\\%m-\\%d-\\%H\\%M).tar.gz {{ diretorio_origem_backup }}"
+        cron_file: "ansible_backup"
+      notify: reiniciar cron # <-- MUDANÇA AQUI
+
+    - name: Cria o cron job diário para limpar backups antigos
+      ansible.builtin.cron:
+        name: "Limpeza Diaria de Backups Antigos"
+        minute: "30"
+        hour: "2"
+        user: root
+        job: "find {{ diretorio_destino_arquivos }} -type f -name '*.tar.gz' -mtime +{{ dias_para_limpeza }} -delete"
+        cron_file: "ansible_backup"
+      notify: reiniciar cron # <-- MUDANÇA AQUI
+
+  handlers:
+    # Este handler apenas mostra a mensagem de debug
+    - name: Exibe mensagem de debug ao reiniciar o cron
+      listen: "reiniciar cron" # <-- "Escuta" o tópico
+      ansible.builtin.debug:
+        msg: "O serviço cron será reiniciado porque uma tarefa de cron foi alterada."
+
+    # Este handler executa o reinício do serviço
+    - name: Efetivamente reinicia o serviço cron
+      listen: "reiniciar cron" # <-- "Escuta" o mesmo tópico
+      ansible.builtin.systemd:
+        name: cron.service
+        state: restarted
